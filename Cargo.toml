@@ -1,0 +1,18 @@
+[package]
+name = "rline"
+version = "0.0.0"
+authors = ["Daniel Mueller <deso@posteo.net>"]
+license = "GPL-3.0+"
+homepage = "https://github.com/d-e-s-o/rline"
+repository = "https://github.com/d-e-s-o/rline.git"
+readme = "README.md"
+keywords = ["readline", "input", "terminal", "console", "gui"]
+description = """
+Input line retrieval using libreadline's "Alternate Interface".
+"""
+
+[dependencies.libc]
+version = "0.2"
+
+[dependencies.uid]
+version = "0.1"
