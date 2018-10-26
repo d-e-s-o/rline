@@ -94,6 +94,8 @@ type rl_hook_func_t = extern "C" fn() -> c_int;
 extern "C" {
   static mut rl_line_buffer: *mut c_char;
   static mut rl_line_buffer_len: c_int;
+  static mut rl_point: c_int;
+  static mut rl_end: c_int;
 
   static mut rl_executing_keyseq: *mut c_char;
   static mut rl_key_sequence_length: c_int;
@@ -367,6 +369,28 @@ impl Readline {
 
     Self::line().take()
   }
+
+  /// Inspect the current line state through a closure.
+  // TODO: Really should not have to be a mutable method.
+  pub fn inspect<F, R>(&mut self, inspector: F) -> R
+  where
+    F: FnOnce(&CStr, usize) -> R,
+  {
+    let _guard = self.activate();
+    let (s, pos, len) = unsafe {
+      debug_assert!(rl_end >= 0);
+      debug_assert!(rl_point >= 0);
+
+      let buf = rl_line_buffer as *const c_char;
+      let len = rl_end as usize;
+      let pos = rl_point as usize;
+
+      (CStr::from_ptr(buf), pos, len)
+    };
+
+    debug_assert_eq!(s.to_bytes().len(), len);
+    inspector(s, pos)
+  }
 }
 
 impl Drop for Readline {
@@ -431,5 +455,19 @@ mod tests {
       .chars()
       .for_each(|c| assert!(rl.feed(c as u8).is_none()));
     assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("second").unwrap());
+  }
+
+  #[test]
+  fn cursor() {
+    let mut rl = Readline::new();
+
+    assert_eq!(rl.feed('a' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("a").unwrap(), 1));
+
+    assert_eq!(rl.feed('b' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("ab").unwrap(), 2));
+
+    assert_eq!(rl.feed('c' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
   }
 }
