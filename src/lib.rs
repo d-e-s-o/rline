@@ -112,6 +112,7 @@ extern "C" {
   fn rl_callback_handler_install(prompt: *const c_char, handler: *mut rl_vcpfunc_t);
   fn rl_stuff_char(c: c_int) -> c_int;
   fn rl_callback_read_char();
+  fn rl_replace_line(text: *const c_char, clear_undo: c_int);
 
   fn rl_save_state(state: *mut readline_state) -> c_int;
   fn rl_restore_state(state: *mut readline_state) -> c_int;
@@ -370,6 +371,28 @@ impl Readline {
     Self::line().take()
   }
 
+  /// Reset libreadline's line state to the given line with the given
+  /// cursor position. If `clear_undo` is set, the undo list associated
+  /// with the current line is cleared
+  ///
+  /// # Panics
+  ///
+  /// Panics if the cursor is not less than or equal to the number of
+  /// characters in the given line.
+  pub fn reset<'slf, S>(&'slf mut self, line: S, cursor: usize, clear_undo: bool)
+  where
+    S: AsRef<CStr>,
+  {
+    let s = line.as_ref();
+    assert!(cursor <= s.to_bytes().len(), "invalid cursor position");
+
+    let _guard = self.activate();
+    unsafe {
+      rl_replace_line(s.as_ptr(), clear_undo.into());
+      rl_point = cursor as c_int;
+    }
+  }
+
   /// Inspect the current line state through a closure.
   // TODO: Really should not have to be a mutable method.
   pub fn inspect<F, R>(&mut self, inspector: F) -> R
@@ -469,5 +492,34 @@ mod tests {
 
     assert_eq!(rl.feed('c' as u8), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
+  }
+
+  #[test]
+  fn reset() {
+    let mut rl = Readline::new();
+
+    assert_eq!(rl.feed('x' as u8), None);
+    assert_eq!(rl.feed('y' as u8), None);
+    assert_eq!(rl.feed('z' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
+
+    rl.reset(&CString::new("abc").unwrap(), 1, true);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
+
+    assert_eq!(rl.feed('x' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
+    assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("axbc").unwrap());
+
+    rl.reset(&CString::new("123").unwrap(), 3, true);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
+
+    assert_eq!(rl.feed('y' as u8), None);
+    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
+  }
+
+  #[test]
+  #[should_panic(expected = "invalid cursor position")]
+  fn reset_panic() {
+    Readline::new().reset(&CString::new("abc").unwrap(), 4, true);
   }
 }
