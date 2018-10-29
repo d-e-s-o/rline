@@ -241,6 +241,9 @@ impl Readline {
       let _guard = rl.activate();
 
       unsafe {
+        debug_assert!(rl_line_buffer.is_null());
+        debug_assert!(rl_executing_keyseq.is_null());
+
         // Unfortunately `readline_state` contains some data that is
         // allocated by libreadline itself, as part of its
         // initialization. Because we create a new context we need to
@@ -300,6 +303,14 @@ impl Readline {
       rl_redisplay_function = Self::display as *mut rl_voidfunc_t;
       rl_prep_term_function = Self::initialize_term as *mut rl_vintfunc_t;
       rl_deprep_term_function = Self::uninitialize_term as *mut rl_voidfunc_t;
+
+      // libreadline already has buffers allocated but we won't be using
+      // them.
+      free(rl_line_buffer as *mut c_void);
+      free(rl_executing_keyseq as *mut c_void);
+
+      rl_line_buffer = null::<c_char>() as *mut c_char;
+      rl_executing_keyseq = null::<c_char>() as *mut c_char;
 
       state.load();
 

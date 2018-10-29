@@ -2,6 +2,7 @@ rline
 =====
 
 - [Documentation][docs-rs]
+- [Changelog](CHANGELOG.md)
 
 **rline** is a crate providing a convenient wrapper around libreadline's
 ["Alternate Interface"][libreadline]. It provides the goodness of
