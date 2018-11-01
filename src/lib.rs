@@ -416,6 +416,19 @@ impl Readline {
   /// cursor position. If `clear_undo` is set, the undo list associated
   /// with the current line is cleared
   ///
+  /// Note that this method does not deal with input related modes. For
+  /// example, libreadline always starts in input mode, but, depending
+  /// on user configuration, it can be transitioned to vi-movement-mode
+  /// in which key bindings behave differently (other similar modes
+  /// exist). When reseting the line using this method the input mode is
+  /// unaffected. If you truly need to manually force libreadline into
+  /// input mode, a new `Readline` will help:
+  /// ```rust
+  /// # use rline::Readline;
+  /// # let mut current = Readline::new();
+  /// current = Readline::new();
+  /// ```
+  ///
   /// # Panics
   ///
   /// Panics if the cursor is not less than or equal to the number of
