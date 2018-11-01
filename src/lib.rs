@@ -60,6 +60,8 @@ use std::fmt::Error;
 use std::fmt::Formatter;
 use std::mem::replace;
 use std::mem::uninitialized;
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::ptr::null;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
@@ -115,7 +117,9 @@ extern "C" {
   fn rl_replace_line(text: *const c_char, clear_undo: c_int);
 
   fn rl_save_state(state: *mut readline_state) -> c_int;
-  fn rl_restore_state(state: *mut readline_state) -> c_int;
+  // Note that the actual prototype accepts a mutable pointer to
+  // `readline_state`. Const correctness is not easy...
+  fn rl_restore_state(state: *const readline_state) -> c_int;
 }
 
 
@@ -135,7 +139,7 @@ impl readline_state {
   }
 
   /// Save the state into libreadline's globals.
-  fn save(&mut self) {
+  fn save(&self) {
     let result = unsafe { rl_restore_state(self) };
     assert_eq!(result, 0);
   }
@@ -169,6 +173,20 @@ impl<T> Locked for Mutex<T> {
 struct ReadlineGuard<'data, 'slf> {
   _guard: MutexGuard<'data, Id>,
   rl: &'slf mut Readline,
+}
+
+impl<'data, 'slf> Deref for ReadlineGuard<'data, 'slf> {
+  type Target = Readline;
+
+  fn deref(&self) -> &Self::Target {
+    &self.rl
+  }
+}
+
+impl<'data, 'slf> DerefMut for ReadlineGuard<'data, 'slf> {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    &mut self.rl
+  }
 }
 
 impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
@@ -238,7 +256,10 @@ impl Readline {
 
     {
       // Make sure that the new state is activated.
-      let _guard = rl.activate();
+      // TODO: Strictly speaking we could omit the load operation
+      //       happening when the guard leaves the scope. We know that
+      //       the state is current, so it just wastes cycles.
+      let mut guard = rl.activate();
 
       unsafe {
         debug_assert!(rl_line_buffer.is_null());
@@ -257,19 +278,17 @@ impl Readline {
         // allocation failure.
         assert!(!rl_line_buffer.is_null(), "failed to allocate rl_line_buffer");
         assert!(!rl_executing_keyseq.is_null(), "failed to allocate rl_executing_keyseq");
-
-        // Note that we do not ever invoke rl_callback_handler_remove.
-        // This crate's assumption is that it is the sole user of
-        // libreadline meaning nobody else will mess with global state.
-        // As such, and because we set the same handler for all
-        // contexts, there is no point in doing additional work to
-        // remove it.
-        // In addition, due to the retardedness of libreadline and it
-        // not capturing even all of its own global state, we could not
-        // even remove the handler if we wanted to, because activating a
-        // `readline_state` object would not set the handler. Sigh.
-        rl_callback_handler_install(null::<c_char>(), Self::handle_line as *mut rl_vcpfunc_t);
       }
+
+      // We allocated some memory with the new addresses going directly
+      // into libreadline's globals. So make sure to read back that
+      // state to have an up-to-date snapshot.
+      guard.state.load();
+      // Believe it or not, but libreadline aliases the line buffer
+      // internally with a pointer, and only storing the state back into
+      // the global will update this pointer. So we need this additional
+      // save here. Yes, that one is a pearl.
+      guard.state.save();
     }
 
     rl
@@ -303,6 +322,17 @@ impl Readline {
       rl_redisplay_function = Self::display as *mut rl_voidfunc_t;
       rl_prep_term_function = Self::initialize_term as *mut rl_vintfunc_t;
       rl_deprep_term_function = Self::uninitialize_term as *mut rl_voidfunc_t;
+
+      // Note that we do not ever invoke rl_callback_handler_remove.
+      // This crate's assumption is that it is the sole user of
+      // libreadline meaning nobody else will mess with global state. As
+      // such, and because we set the same handler for all contexts,
+      // there is no point in doing additional work to remove it. In
+      // addition, due to the retardedness of libreadline and it not
+      // capturing even all of its own global state, we could not even
+      // remove the handler if we wanted to, because activating a
+      // `readline_state` object would not set the handler. Sigh.
+      rl_callback_handler_install(null::<c_char>(), Self::handle_line as *mut rl_vcpfunc_t);
 
       // libreadline already has buffers allocated but we won't be using
       // them.
