@@ -470,6 +470,12 @@ impl Readline {
   }
 }
 
+impl Default for Readline {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl Drop for Readline {
   fn drop(&mut self) {
     let _guard = self.activate();
