@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.1.1
+-----
 - Fixed bug causing user configuration to be only active for the first
   `Readline` context created
 - Made sure to release initially `libreadline` allocated buffers to
