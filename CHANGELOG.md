@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.1.2
+-----
 - Fixed wrong lifetime being used for `&CStr` parameter in function
   passed to `Readline::inspect` method
 - Added categories to Cargo.toml
