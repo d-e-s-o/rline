@@ -6,6 +6,8 @@ license = "GPL-3.0+"
 homepage = "https://github.com/d-e-s-o/rline"
 repository = "https://github.com/d-e-s-o/rline.git"
 readme = "README.md"
+categories = ["api-bindings", "command-line-interface", "text-editors",
+              "os::unix-apis", "concurrency"]
 keywords = ["readline", "input", "terminal", "console", "gui"]
 description = """
 Input line retrieval using libreadline's "Alternate Interface".
