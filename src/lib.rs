@@ -449,7 +449,7 @@ impl Readline {
 
   /// Inspect the current line state through a closure.
   // TODO: Really should not have to be a mutable method.
-  pub fn inspect<F, R>(&mut self, inspector: F) -> R
+  pub fn inspect<'slf, F, R>(&'slf mut self, inspector: F) -> R
   where
     F: FnOnce(&CStr, usize) -> R,
   {

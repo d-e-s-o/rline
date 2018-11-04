@@ -1,3 +1,9 @@
+Unreleased
+----------
+- Fixed wrong lifetime being used for `&CStr` parameter in function
+  passed to `Readline::inspect` method
+
+
 0.1.1
 -----
 - Fixed bug causing user configuration to be only active for the first
