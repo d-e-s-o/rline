@@ -18,8 +18,11 @@
 // *************************************************************************
 
 #![deny(
+  missing_copy_implementations,
   missing_debug_implementations,
   missing_docs,
+  trivial_casts,
+  trivial_numeric_casts,
   unstable_features,
   unused_import_braces,
   unused_qualifications,
@@ -451,7 +454,7 @@ impl Readline {
       debug_assert!(rl_end >= 0);
       debug_assert!(rl_point >= 0);
 
-      let buf = rl_line_buffer as *const c_char;
+      let buf = rl_line_buffer;
       let len = rl_end as usize;
       let pos = rl_point as usize;
 
