@@ -19,9 +19,6 @@
 
 #![deny(warnings)]
 
-extern crate libc;
-extern crate rline;
-
 use std::ffi::CString;
 
 use libc::c_char;

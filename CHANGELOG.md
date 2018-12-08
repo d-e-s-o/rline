@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Adjusted program to use Rust Edition 2018
+
+
 0.1.2
 -----
 - Fixed wrong lifetime being used for `&CStr` parameter in function

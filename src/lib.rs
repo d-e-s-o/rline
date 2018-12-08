@@ -17,11 +17,6 @@
 // * along with this program.  If not, see <http://www.gnu.org/licenses/>. *
 // *************************************************************************
 
-#![allow(
-  unknown_lints,
-  block_in_if_condition_stmt,
-  redundant_field_names,
-)]
 #![deny(
   future_incompatible,
   missing_debug_implementations,
@@ -49,9 +44,6 @@
 //! core logic of handling input (based on characters) and displaying
 //! them. It is highly questionable whether this crate achieved a 100%
 //! isolation.
-
-extern crate libc;
-extern crate uid;
 
 use std::ffi::CStr;
 use std::ffi::CString;
