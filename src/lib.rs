@@ -18,16 +18,17 @@
 // *************************************************************************
 
 #![deny(
-  future_incompatible,
   missing_debug_implementations,
   missing_docs,
-  rust_2018_compatibility,
-  rust_2018_idioms,
   unstable_features,
   unused_import_braces,
   unused_qualifications,
   unused_results,
-  warnings,
+)]
+#![warn(
+  future_incompatible,
+  rust_2018_compatibility,
+  rust_2018_idioms,
 )]
 
 //! A crate for reading a line using libreadline. Contrary to many other
