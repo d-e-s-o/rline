@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.1.3
+-----
 - Added example illustrating basic usage of `Readline` objects in a
   terminal application
 - Adjusted program to use Rust Edition 2018
