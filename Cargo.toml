@@ -19,3 +19,6 @@ version = "0.2"
 
 [dependencies.uid]
 version = "0.1"
+
+[dev-dependencies.termion]
+version="1.5"
