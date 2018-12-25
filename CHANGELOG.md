@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Fixed use-after-free bug in `user-configuration` test
 - Enabled CI pipeline comprising building, testing, and linting of the
   project
 - Added badges indicating pipeline status, current `crates.io` published

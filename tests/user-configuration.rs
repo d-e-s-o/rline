@@ -40,12 +40,11 @@ fn with_user_configuration() {
   // first `Readline` object was created. As part of this call
   // libreadline seems to be reading its global configuration, and with
   // that overwrite all customizations made beforehand.
-  let line = CString::new("\"jk\": vi-movement-mode")
+  let mut line = CString::new("\"jk\": vi-movement-mode")
     .unwrap()
-    .into_bytes_with_nul()
-    .as_mut_ptr();
+    .into_bytes_with_nul();
 
-  let result = unsafe { rl_parse_and_bind(line as *mut c_char) };
+  let result = unsafe { rl_parse_and_bind(line.as_mut_ptr() as *mut c_char) };
   assert_eq!(result, 0);
 
   assert_eq!(rl.feed(b'a'), None);
