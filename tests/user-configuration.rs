@@ -48,19 +48,19 @@ fn with_user_configuration() {
   let result = unsafe { rl_parse_and_bind(line as *mut c_char) };
   assert_eq!(result, 0);
 
-  assert_eq!(rl.feed('a' as u8), None);
-  assert_eq!(rl.feed('b' as u8), None);
-  assert_eq!(rl.feed('j' as u8), None);
-  assert_eq!(rl.feed('k' as u8), None);
-  assert_eq!(rl.feed('a' as u8), None);
-  assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("ab").unwrap());
+  assert_eq!(rl.feed(b'a'), None);
+  assert_eq!(rl.feed(b'b'), None);
+  assert_eq!(rl.feed(b'j'), None);
+  assert_eq!(rl.feed(b'k'), None);
+  assert_eq!(rl.feed(b'a'), None);
+  assert_eq!(rl.feed(b'\n').unwrap(), CString::new("ab").unwrap());
 
   rl = Readline::new();
 
-  assert_eq!(rl.feed('a' as u8), None);
-  assert_eq!(rl.feed('b' as u8), None);
-  assert_eq!(rl.feed('j' as u8), None);
-  assert_eq!(rl.feed('k' as u8), None);
-  assert_eq!(rl.feed('a' as u8), None);
-  assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("ab").unwrap());
+  assert_eq!(rl.feed(b'a'), None);
+  assert_eq!(rl.feed(b'b'), None);
+  assert_eq!(rl.feed(b'j'), None);
+  assert_eq!(rl.feed(b'k'), None);
+  assert_eq!(rl.feed(b'a'), None);
+  assert_eq!(rl.feed(b'\n').unwrap(), CString::new("ab").unwrap());
 }

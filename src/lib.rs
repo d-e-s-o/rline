@@ -518,7 +518,7 @@ mod tests {
   fn empty_input() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("").unwrap())
+    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("").unwrap())
   }
 
   #[test]
@@ -528,25 +528,25 @@ mod tests {
     "first"
       .chars()
       .for_each(|c| assert!(rl.feed(c as u8).is_none()));
-    assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("first").unwrap());
+    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("first").unwrap());
 
     "second"
       .chars()
       .for_each(|c| assert!(rl.feed(c as u8).is_none()));
-    assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("second").unwrap());
+    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("second").unwrap());
   }
 
   #[test]
   fn cursor() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed('a' as u8), None);
+    assert_eq!(rl.feed(b'a'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("a").unwrap(), 1));
 
-    assert_eq!(rl.feed('b' as u8), None);
+    assert_eq!(rl.feed(b'b'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("ab").unwrap(), 2));
 
-    assert_eq!(rl.feed('c' as u8), None);
+    assert_eq!(rl.feed(b'c'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
   }
 
@@ -554,22 +554,22 @@ mod tests {
   fn reset() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed('x' as u8), None);
-    assert_eq!(rl.feed('y' as u8), None);
-    assert_eq!(rl.feed('z' as u8), None);
+    assert_eq!(rl.feed(b'x'), None);
+    assert_eq!(rl.feed(b'y'), None);
+    assert_eq!(rl.feed(b'z'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
 
     rl.reset(&CString::new("abc").unwrap(), 1, true);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
 
-    assert_eq!(rl.feed('x' as u8), None);
+    assert_eq!(rl.feed(b'x'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
-    assert_eq!(rl.feed('\n' as u8).unwrap(), CString::new("axbc").unwrap());
+    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("axbc").unwrap());
 
     rl.reset(&CString::new("123").unwrap(), 3, true);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
 
-    assert_eq!(rl.feed('y' as u8), None);
+    assert_eq!(rl.feed(b'y'), None);
     assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
   }
 
