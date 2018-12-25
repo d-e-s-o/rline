@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Renamed `inspect` method to `peek`
+
+
 0.1.4
 -----
 - Fixed use-after-free bug in `user-configuration` test

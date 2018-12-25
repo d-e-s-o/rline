@@ -11,7 +11,9 @@ build-test:cargo:
   script:
   - rustc --version && cargo --version
   - cargo build --all --verbose
+  - cargo build --examples --all --verbose
   - cargo test --all --verbose
+  - cargo test --examples --all --verbose
 
 lint:clippy:
   script:

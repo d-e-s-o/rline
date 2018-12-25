@@ -443,9 +443,9 @@ impl Readline {
     }
   }
 
-  /// Inspect the current line state through a closure.
+  /// Peek at the current line state through a closure.
   // TODO: Really should not have to be a mutable method.
-  pub fn inspect<F, R>(&mut self, inspector: F) -> R
+  pub fn peek<F, R>(&mut self, peeker: F) -> R
   where
     F: FnOnce(&CStr, usize) -> R,
   {
@@ -462,7 +462,7 @@ impl Readline {
     };
 
     debug_assert_eq!(s.to_bytes().len(), len);
-    inspector(s, pos)
+    peeker(s, pos)
   }
 }
 
@@ -541,13 +541,13 @@ mod tests {
     let mut rl = Readline::new();
 
     assert_eq!(rl.feed(b'a'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("a").unwrap(), 1));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("a").unwrap(), 1));
 
     assert_eq!(rl.feed(b'b'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("ab").unwrap(), 2));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("ab").unwrap(), 2));
 
     assert_eq!(rl.feed(b'c'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
   }
 
   #[test]
@@ -557,20 +557,20 @@ mod tests {
     assert_eq!(rl.feed(b'x'), None);
     assert_eq!(rl.feed(b'y'), None);
     assert_eq!(rl.feed(b'z'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
 
     rl.reset(&CString::new("abc").unwrap(), 1, true);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
 
     assert_eq!(rl.feed(b'x'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
     assert_eq!(rl.feed(b'\n').unwrap(), CString::new("axbc").unwrap());
 
     rl.reset(&CString::new("123").unwrap(), 3, true);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
 
     assert_eq!(rl.feed(b'y'), None);
-    assert_eq!(rl.inspect(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
+    assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
   }
 
   #[test]
