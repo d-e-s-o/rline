@@ -429,7 +429,7 @@ impl Readline {
   ///
   /// Panics if the cursor is not less than or equal to the number of
   /// characters in the given line.
-  pub fn reset<'slf, S>(&'slf mut self, line: S, cursor: usize, clear_undo: bool)
+  pub fn reset<S>(&mut self, line: S, cursor: usize, clear_undo: bool)
   where
     S: AsRef<CStr>,
   {
@@ -445,7 +445,7 @@ impl Readline {
 
   /// Inspect the current line state through a closure.
   // TODO: Really should not have to be a mutable method.
-  pub fn inspect<'slf, F, R>(&'slf mut self, inspector: F) -> R
+  pub fn inspect<F, R>(&mut self, inspector: F) -> R
   where
     F: FnOnce(&CStr, usize) -> R,
   {
