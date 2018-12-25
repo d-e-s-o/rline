@@ -1,3 +1,10 @@
+Unreleased
+----------
+- Enabled CI pipeline comprising building, testing, and linting of the
+  project
+  - Added badge indicating pipeline status
+
+
 0.1.3
 -----
 - Added example illustrating basic usage of `Readline` objects in a

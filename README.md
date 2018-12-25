@@ -1,3 +1,5 @@
+[![pipeline](https://gitlab.com/d-e-s-o/rline/badges/master/pipeline.svg)](https://gitlab.com/d-e-s-o/rline/commits/master)
+
 rline
 =====
 

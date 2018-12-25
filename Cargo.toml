@@ -14,6 +14,9 @@ description = """
 Input line retrieval using libreadline's "Alternate Interface".
 """
 
+[badges]
+gitlab = { repository = "d-e-s-o/rline", branch = "master" }
+
 [dependencies.libc]
 version = "0.2"
 
