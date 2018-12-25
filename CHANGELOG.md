@@ -1,6 +1,7 @@
 Unreleased
 ----------
 - Renamed `inspect` method to `peek`
+- Adjusted `feed` to accept a `u8` instead of a `c_int`
 
 
 0.1.4

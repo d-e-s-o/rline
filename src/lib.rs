@@ -387,10 +387,10 @@ impl Readline {
     }
   }
 
-  /// Feed a character to libreadline.
-  pub fn feed<C>(&mut self, c: C) -> Option<CString>
+  /// Feed a byte to libreadline.
+  pub fn feed<B>(&mut self, b: B) -> Option<CString>
   where
-    C: Into<c_int>,
+    B: Into<u8>,
   {
     let _guard = self.activate();
 
@@ -400,7 +400,12 @@ impl Readline {
       // buffer size large enough for 512 characters). As we feed one
       // character at a time and process (i.e., consume) it immediately
       // afterwards, there is no risk of us ever hitting this limit.
-      let result = rl_stuff_char(c.into());
+      //
+      // Note that despite rl_stuff_char accepting a `c_int`, it
+      // actually casts that value down to a single byte internally,
+      // which is why we provide a saner interface that directly justs
+      // accepts bytes.
+      let result = rl_stuff_char(c_int::from(b.into()));
       assert_ne!(result, 0);
       rl_callback_read_char();
     }

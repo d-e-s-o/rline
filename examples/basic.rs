@@ -53,7 +53,7 @@ fn process_byte<W>(w: &mut W, rl: &mut Readline, byte: u8) -> Result<Op>
 where
   W: Write,
 {
-  if let Some(text) = rl.feed(i32::from(byte)) {
+  if let Some(text) = rl.feed(byte) {
     // Check whether our `Readline` object has completed a line given
     // the user-provided input. If so, check whether the user typed
     // "quit" and exit. If not just print it, move to the next line,
