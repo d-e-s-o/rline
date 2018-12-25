@@ -62,13 +62,13 @@ where
       return Ok(Op::Quit)
     }
 
-    w.write(text.as_bytes())?;
+    w.write_all(text.as_bytes())?;
     Ok(Op::Comp)
   } else {
     // Take a peek at the text libreadline has in its internal buffer
     // and take measures to display that on the screen.
     rl.inspect(|text, cursor| {
-      w.write(text.to_bytes())?;
+      w.write_all(text.to_bytes())?;
       Ok(Op::Cont(cursor))
     })
   }
