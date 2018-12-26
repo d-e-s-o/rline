@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.1.4
+-----
 - Fixed use-after-free bug in `user-configuration` test
 - Enabled CI pipeline comprising building, testing, and linting of the
   project
