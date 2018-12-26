@@ -47,19 +47,11 @@ fn with_user_configuration() {
   let result = unsafe { rl_parse_and_bind(line.as_mut_ptr() as *mut c_char) };
   assert_eq!(result, 0);
 
-  assert_eq!(rl.feed(b'a'), None);
-  assert_eq!(rl.feed(b'b'), None);
-  assert_eq!(rl.feed(b'j'), None);
-  assert_eq!(rl.feed(b'k'), None);
-  assert_eq!(rl.feed(b'a'), None);
-  assert_eq!(rl.feed(b'\n').unwrap(), CString::new("ab").unwrap());
+  assert_eq!(rl.feed(b"abjka"), None);
+  assert_eq!(rl.feed(b"\n").unwrap(), CString::new("ab").unwrap());
 
   rl = Readline::new();
 
-  assert_eq!(rl.feed(b'a'), None);
-  assert_eq!(rl.feed(b'b'), None);
-  assert_eq!(rl.feed(b'j'), None);
-  assert_eq!(rl.feed(b'k'), None);
-  assert_eq!(rl.feed(b'a'), None);
-  assert_eq!(rl.feed(b'\n').unwrap(), CString::new("ab").unwrap());
+  assert_eq!(rl.feed(b"abjka"), None);
+  assert_eq!(rl.feed(b"\n").unwrap(), CString::new("ab").unwrap());
 }

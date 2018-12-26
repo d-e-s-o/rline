@@ -195,6 +195,12 @@ impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
 }
 
 
+/// A type representing a single key. A key is a sequence of bytes which
+/// can be anything from a single byte representing an ASCII character
+/// or a terminal escape sequence.
+type Key = [u8];
+
+
 /// A struct representing a context for reading a line using libreadline.
 #[derive(Debug)]
 pub struct Readline {
@@ -387,14 +393,24 @@ impl Readline {
     }
   }
 
-  /// Feed a byte to libreadline.
-  pub fn feed<B>(&mut self, b: B) -> Option<CString>
-  where
-    B: Into<u8>,
-  {
+  /// Feed a key to libreadline.
+  ///
+  /// The provided buffer should comprise not more than a single key,
+  /// which may be a single byte only or an escape sequence.
+  ///
+  /// # Panics
+  ///
+  /// Panics if too many bytes are supplied. libreadline's internal
+  /// buffer is said to hold 512 bytes, so any slice of equal or greater
+  /// size may cause a panic.
+  pub fn feed(&mut self, key: impl AsRef<Key>) -> Option<CString> {
+    if key.as_ref().is_empty() {
+      return None
+    }
+
     let _guard = self.activate();
 
-    unsafe {
+    for &b in key.as_ref() {
       // This call will only fail if there is not enough space available
       // to push the given character (with libreadline specifying a
       // buffer size large enough for 512 characters). As we feed one
@@ -405,11 +421,18 @@ impl Readline {
       // actually casts that value down to a single byte internally,
       // which is why we provide a saner interface that directly justs
       // accepts bytes.
-      let result = rl_stuff_char(c_int::from(b.into()));
-      assert_ne!(result, 0);
-      rl_callback_read_char();
+      let result = unsafe { rl_stuff_char(c_int::from(b)) };
+      // There is nothing we can do about this error. Heck, not even the
+      // user can do anything about this problem *after* hitting it. We
+      // cannot safely call `rl_callback_read_char` without risking
+      // cutting off input in the middle of an escape sequence,
+      // resulting in what effectively is corrupted input. We also
+      // cannot revert the buffer back to its previous state because
+      // there is no API to do that. Holy crap what a mess.
+      assert_ne!(result, 0, "libreadline's input buffer overflowed");
     }
 
+    unsafe { rl_callback_read_char(); }
     Self::line().take()
   }
 
@@ -523,35 +546,38 @@ mod tests {
   fn empty_input() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("").unwrap())
+    assert!(rl.feed(b"").is_none())
+  }
+
+  #[test]
+  fn empty_line_input() {
+    let mut rl = Readline::new();
+
+    assert_eq!(rl.feed(b"\n").unwrap(), CString::new("").unwrap())
   }
 
   #[test]
   fn multiple_inputs() {
     let mut rl = Readline::new();
 
-    "first"
-      .chars()
-      .for_each(|c| assert!(rl.feed(c as u8).is_none()));
-    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("first").unwrap());
+    assert!(rl.feed(b"first").is_none());
+    assert_eq!(rl.feed(b"\n").unwrap(), CString::new("first").unwrap());
 
-    "second"
-      .chars()
-      .for_each(|c| assert!(rl.feed(c as u8).is_none()));
-    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("second").unwrap());
+    assert!(rl.feed(b"second").is_none());
+    assert_eq!(rl.feed(b"\n").unwrap(), CString::new("second").unwrap());
   }
 
   #[test]
   fn cursor() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed(b'a'), None);
+    assert_eq!(rl.feed(b"a"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("a").unwrap(), 1));
 
-    assert_eq!(rl.feed(b'b'), None);
+    assert_eq!(rl.feed(b"b"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("ab").unwrap(), 2));
 
-    assert_eq!(rl.feed(b'c'), None);
+    assert_eq!(rl.feed(b"c"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 3));
   }
 
@@ -559,22 +585,20 @@ mod tests {
   fn reset() {
     let mut rl = Readline::new();
 
-    assert_eq!(rl.feed(b'x'), None);
-    assert_eq!(rl.feed(b'y'), None);
-    assert_eq!(rl.feed(b'z'), None);
+    assert_eq!(rl.feed(b"xyz"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
 
     rl.reset(&CString::new("abc").unwrap(), 1, true);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
 
-    assert_eq!(rl.feed(b'x'), None);
+    assert_eq!(rl.feed(b"x"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
-    assert_eq!(rl.feed(b'\n').unwrap(), CString::new("axbc").unwrap());
+    assert_eq!(rl.feed(b"\n").unwrap(), CString::new("axbc").unwrap());
 
     rl.reset(&CString::new("123").unwrap(), 3, true);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
 
-    assert_eq!(rl.feed(b'y'), None);
+    assert_eq!(rl.feed(b"y"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
   }
 

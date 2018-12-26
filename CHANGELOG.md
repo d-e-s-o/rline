@@ -1,7 +1,8 @@
 Unreleased
 ----------
 - Renamed `inspect` method to `peek`
-- Adjusted `feed` to accept a `u8` instead of a `c_int`
+- Adjusted `feed` to accept a `[u8]` instead of a `c_int`
+  - Properly support multi-byte inputs
 
 
 0.1.4

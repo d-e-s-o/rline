@@ -19,7 +19,7 @@
 
 //! An example illustrating how to use the `rline` crate's `Readline`
 //! object.
-//! The relevant logic resides inside the `process_byte` function.
+//! The relevant logic resides inside the `process_input` function.
 
 use std::io::Read;
 use std::io::Result;
@@ -36,43 +36,6 @@ use rline::Readline;
 /// ASCII end-of-text indicator.
 const EOT: u8 = 0x04;
 
-enum Op {
-  /// A line has been completed. The cursor position is to be
-  /// automatically reset to the beginning of the line.
-  Comp,
-  /// Continue processing as normal. The value provided indicates the
-  /// updated cursor position as reported by `libreadline`.
-  Cont(usize),
-  /// Stop processing input and quit.
-  Quit,
-}
-
-
-/// Use a `Readline` object and process a single byte that was read.
-fn process_byte<W>(w: &mut W, rl: &mut Readline, byte: u8) -> Result<Op>
-where
-  W: Write,
-{
-  if let Some(text) = rl.feed(byte) {
-    // Check whether our `Readline` object has completed a line given
-    // the user-provided input. If so, check whether the user typed
-    // "quit" and exit. If not just print it, move to the next line,
-    // and continue accepting input.
-    if text.as_bytes() == b"quit" {
-      return Ok(Op::Quit)
-    }
-
-    w.write_all(text.as_bytes())?;
-    Ok(Op::Comp)
-  } else {
-    // Take a peek at the text libreadline has in its internal buffer
-    // and take measures to display that on the screen.
-    rl.peek(|text, cursor| {
-      w.write_all(text.to_bytes())?;
-      Ok(Op::Cont(cursor))
-    })
-  }
-}
 
 /// Read and process data from the given `Read` object.
 ///
@@ -91,25 +54,32 @@ where
     return Ok(true)
   }
 
-  // Now feed all the input we have received to the `Readline` instance.
-  for byte in &buffer[0..n] {
-    // Always clear the current line and reset the cursor to the beginning
-    // before outputting something on our own.
-    write!(w, "{}{}", clear::CurrentLine, cursor::Goto(1, *line))?;
+  // Always clear the current line and reset the cursor to the beginning
+  // before outputting something on our own.
+  write!(w, "{}{}", clear::CurrentLine, cursor::Goto(1, *line))?;
 
-    let cursor = match process_byte(&mut w, rl, *byte)? {
-      Op::Comp => {
-        *line += 1;
-        1
-      },
+  // Check whether our `Readline` object has completed a line given
+  // the user-provided input. If so, check whether the user typed
+  // "quit" and exit. If not just print it, move to the next line,
+  // and continue accepting input.
+  if let Some(text) = rl.feed(&buffer[..n]) {
+    if text.as_bytes() == b"quit" {
+      return Ok(true)
+    }
+
+    *line += 1;
+    w.write_all(text.as_bytes())?;
+    write!(w, "{}", cursor::Goto(1, *line))?
+  } else {
+    // Take a peek at the text libreadline has in its internal buffer
+    // and take measures to display that on the screen, along with the
+    // cursor.
+    rl.peek(|text, cursor| {
+      w.write_all(text.to_bytes())?;
       // Normalize the cursor position as per `termion`'s rules.
-      Op::Cont(cursor) => cursor as u16 + 1,
-      Op::Quit => return Ok(true),
-    };
-
-    // Now update the cursor position as per libreadline's judgment.
-    write!(w, "{}", cursor::Goto(cursor, *line))?;
-  }
+      write!(w, "{}", cursor::Goto(cursor as u16 + 1, *line))
+    })?
+  };
 
   w.flush()?;
   Ok(false)
