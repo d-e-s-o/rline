@@ -22,7 +22,7 @@ use std::env::var;
 
 fn main() {
   match var("CARGO_CFG_TARGET_OS").unwrap().as_ref() {
-    "linux" => println!("cargo:rustc-flags=-l readline"),
+    "linux" => println!("cargo:rustc-link-lib=readline"),
     os => panic!("unknown target OS {}", os),
   }
 }
