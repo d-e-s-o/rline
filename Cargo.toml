@@ -13,6 +13,8 @@ keywords = ["readline", "input", "terminal", "console", "gui"]
 description = """
 Input line retrieval using libreadline's "Alternate Interface".
 """
+build = "build.rs"
+links = "readline"
 
 [badges]
 gitlab = { repository = "d-e-s-o/rline", branch = "master" }
