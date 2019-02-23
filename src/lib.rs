@@ -166,7 +166,7 @@ impl<T> Locked for Mutex<T> {
 /// A wrapper for `MutexGuard` ensuring that our libreadline state is read back before dropping.
 struct ReadlineGuard<'data, 'slf> {
   _guard: MutexGuard<'data, Id>,
-  rl: &'slf mut Readline,
+  state: &'slf mut readline_state,
 }
 
 impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
@@ -174,7 +174,7 @@ impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
     // Before unlocking (by virtue of dropping the embedded guard)
     // always make sure to read back the most recent version of the
     // state from the globals.
-    self.rl.state.load()
+    self.state.load()
   }
 }
 
@@ -269,12 +269,12 @@ impl Readline {
       // We allocated some memory with the new addresses going directly
       // into libreadline's globals. So make sure to read back that
       // state to have an up-to-date snapshot.
-      guard.rl.state.load();
+      guard.state.load();
       // Believe it or not, but libreadline aliases the line buffer
       // internally with a pointer, and only storing the state back into
       // the global will update this pointer. So we need this additional
       // save here. Yes, that one is a pearl.
-      guard.rl.state.save();
+      guard.state.save();
     }
 
     rl
@@ -373,7 +373,7 @@ impl Readline {
 
     ReadlineGuard {
       _guard: guard,
-      rl: self,
+      state: &mut self.state,
     }
   }
 
