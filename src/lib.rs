@@ -1,7 +1,7 @@
 // lib.rs
 
 // *************************************************************************
-// * Copyright (C) 2018 Daniel Mueller (deso@posteo.net)                   *
+// * Copyright (C) 2018-2019 Daniel Mueller (deso@posteo.net)              *
 // *                                                                       *
 // * This program is free software: you can redistribute it and/or modify  *
 // * it under the terms of the GNU General Public License as published by  *
@@ -56,8 +56,6 @@ use std::fmt::Error;
 use std::fmt::Formatter;
 use std::mem::replace;
 use std::mem::uninitialized;
-use std::ops::Deref;
-use std::ops::DerefMut;
 use std::ptr::null;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
@@ -171,20 +169,6 @@ struct ReadlineGuard<'data, 'slf> {
   rl: &'slf mut Readline,
 }
 
-impl<'data, 'slf> Deref for ReadlineGuard<'data, 'slf> {
-  type Target = Readline;
-
-  fn deref(&self) -> &Self::Target {
-    &self.rl
-  }
-}
-
-impl<'data, 'slf> DerefMut for ReadlineGuard<'data, 'slf> {
-  fn deref_mut(&mut self) -> &mut Self::Target {
-    &mut self.rl
-  }
-}
-
 impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
   fn drop(&mut self) {
     // Before unlocking (by virtue of dropping the embedded guard)
@@ -261,7 +245,7 @@ impl Readline {
       // TODO: Strictly speaking we could omit the load operation
       //       happening when the guard leaves the scope. We know that
       //       the state is current, so it just wastes cycles.
-      let mut guard = rl.activate();
+      let guard = rl.activate();
 
       unsafe {
         debug_assert!(rl_line_buffer.is_null());
@@ -285,12 +269,12 @@ impl Readline {
       // We allocated some memory with the new addresses going directly
       // into libreadline's globals. So make sure to read back that
       // state to have an up-to-date snapshot.
-      guard.state.load();
+      guard.rl.state.load();
       // Believe it or not, but libreadline aliases the line buffer
       // internally with a pointer, and only storing the state back into
       // the global will update this pointer. So we need this additional
       // save here. Yes, that one is a pearl.
-      guard.state.save();
+      guard.rl.state.save();
     }
 
     rl
