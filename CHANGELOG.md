@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Adjusted `peek` method to no longer require a mutable object
+
+
 0.2.0
 -----
 - Renamed `inspect` method to `peek`

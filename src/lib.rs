@@ -49,6 +49,8 @@
 //! them. It is highly questionable whether this crate achieved a 100%
 //! isolation.
 
+use std::cell::RefCell;
+use std::cell::RefMut;
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::fmt::Debug;
@@ -166,7 +168,7 @@ impl<T> Locked for Mutex<T> {
 /// A wrapper for `MutexGuard` ensuring that our libreadline state is read back before dropping.
 struct ReadlineGuard<'data, 'slf> {
   _guard: MutexGuard<'data, Id>,
-  state: &'slf mut readline_state,
+  state: RefMut<'slf, readline_state>,
 }
 
 impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
@@ -189,7 +191,7 @@ type Key = [u8];
 #[derive(Debug)]
 pub struct Readline {
   id: Id,
-  state: readline_state,
+  state: RefCell<readline_state>,
 }
 
 impl Readline {
@@ -235,9 +237,9 @@ impl Readline {
   ///
   /// Panics on failure to allocate internally used C objects.
   pub fn new() -> Self {
-    let mut rl = Self {
+    let rl = Self {
       id: Id::new(),
-      state: Self::initial().clone(),
+      state: RefCell::new(Self::initial().clone()),
     };
 
     {
@@ -245,7 +247,7 @@ impl Readline {
       // TODO: Strictly speaking we could omit the load operation
       //       happening when the guard leaves the scope. We know that
       //       the state is current, so it just wastes cycles.
-      let guard = rl.activate();
+      let mut guard = rl.activate();
 
       unsafe {
         debug_assert!(rl_line_buffer.is_null());
@@ -362,18 +364,19 @@ impl Readline {
   }
 
   /// Activate this context.
-  fn activate<'slf, 'data: 'slf>(&'slf mut self) -> ReadlineGuard<'data, 'slf> {
+  fn activate<'slf, 'data: 'slf>(&'slf self) -> ReadlineGuard<'data, 'slf> {
     let mut guard = Self::mutex().lock().unwrap();
+    let state = self.state.borrow_mut();
 
     // Activate our state if necessary.
     if *guard != self.id {
-      self.state.save();
+      state.save();
       *guard = self.id;
     }
 
     ReadlineGuard {
       _guard: guard,
-      state: &mut self.state,
+      state,
     }
   }
 
@@ -456,8 +459,7 @@ impl Readline {
   }
 
   /// Peek at the current line state through a closure.
-  // TODO: Really should not have to be a mutable method.
-  pub fn peek<F, R>(&mut self, peeker: F) -> R
+  pub fn peek<F, R>(&self, peeker: F) -> R
   where
     F: FnOnce(&CStr, usize) -> R,
   {
