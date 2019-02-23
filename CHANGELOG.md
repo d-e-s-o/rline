@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.2.1
+-----
 - Adjusted `peek` method to no longer require a mutable object
 
 
