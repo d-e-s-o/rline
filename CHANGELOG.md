@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Downgraded `deny` crate-level lints to `warn`
+
+
 0.2.1
 -----
 - Adjusted `peek` method to no longer require a mutable object

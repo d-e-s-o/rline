@@ -17,21 +17,19 @@
 // * along with this program.  If not, see <http://www.gnu.org/licenses/>. *
 // *************************************************************************
 
-#![deny(
+#![warn(
+  future_incompatible,
   missing_copy_implementations,
   missing_debug_implementations,
   missing_docs,
+  rust_2018_compatibility,
+  rust_2018_idioms,
   trivial_casts,
   trivial_numeric_casts,
   unstable_features,
   unused_import_braces,
   unused_qualifications,
   unused_results,
-)]
-#![warn(
-  future_incompatible,
-  rust_2018_compatibility,
-  rust_2018_idioms,
 )]
 
 //! A crate for reading a line using libreadline. Contrary to many other
