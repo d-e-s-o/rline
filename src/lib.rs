@@ -499,7 +499,7 @@ impl Drop for Readline {
 
 // Note that libreadline is pretty much fully configurable. With
 // specific configurations it is possible that some tests fail (although
-// we mostly use functionality that is pretty basis and unlikely to have
+// we mostly use functionality that is pretty basic and unlikely to have
 // been reconfigured by the user). While it would be possible to
 // override the user configuration for the purpose of testing, that is
 // not trivial and out of the scope of this crate.
