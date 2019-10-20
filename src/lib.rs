@@ -402,9 +402,9 @@ impl Readline {
       // character at a time and process (i.e., consume) it immediately
       // afterwards, there is no risk of us ever hitting this limit.
       //
-      // Note that despite rl_stuff_char accepting a `c_int`, it
+      // Note that despite `rl_stuff_char` accepting a `c_int`, it
       // actually casts that value down to a single byte internally,
-      // which is why we provide a saner interface that directly justs
+      // which is why we provide a saner interface that directly just
       // accepts bytes.
       let result = unsafe { rl_stuff_char(c_int::from(b)) };
       // There is nothing we can do about this error. Heck, not even the
