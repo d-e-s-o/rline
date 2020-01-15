@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Bumped minimum required Rust version to `1.36.0`
 - Added code coverage collection and reporting to CI pipeline
 - Downgraded `deny` crate-level lints to `warn`
 
