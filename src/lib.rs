@@ -1,7 +1,7 @@
 // lib.rs
 
 // *************************************************************************
-// * Copyright (C) 2018-2019 Daniel Mueller (deso@posteo.net)              *
+// * Copyright (C) 2018-2020 Daniel Mueller (deso@posteo.net)              *
 // *                                                                       *
 // * This program is free software: you can redistribute it and/or modify  *
 // * it under the terms of the GNU General Public License as published by  *
@@ -55,7 +55,7 @@ use std::fmt::Debug;
 use std::fmt::Error;
 use std::fmt::Formatter;
 use std::mem::replace;
-use std::mem::uninitialized;
+use std::mem::MaybeUninit;
 use std::ptr::null;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
@@ -117,6 +117,13 @@ extern "C" {
 }
 
 
+/// A helper function for loading a `readline_state` object.
+fn load_state(state: *mut readline_state) {
+  let result = unsafe { rl_save_state(state) };
+  assert_eq!(result, 0);
+}
+
+
 /// A rough approximation of libreadline's `readline_state`. We treat
 /// the content as opaque. We are vastly over estimating the size of the
 /// actual struct. The size is not constant (due to usage of `c_int`).
@@ -128,8 +135,7 @@ struct readline_state([u8; 512]);
 impl readline_state {
   /// Load the state from libreadline's globals.
   fn load(&mut self) {
-    let result = unsafe { rl_save_state(self) };
-    assert_eq!(result, 0);
+    load_state(self)
   }
 
   /// Save the state into libreadline's globals.
@@ -285,17 +291,15 @@ impl Readline {
     // We effectively cache a version of `readline_state` as it was set
     // by libreadline before anything could have changed. This state
     // acts as the template for all the states we create later on.
-    static mut STATE: Option<readline_state> = None;
+    static mut STATE: MaybeUninit<readline_state> = MaybeUninit::uninit();
     static ONCE: Once = Once::new();
 
+    // We should be safe *not* using our all-protecting mutex here
+    // because this functionality is invoked only as the very first
+    // interaction with libreadline, by virtue of being used only in
+    // the constructor of objects of the one struct that has exclusive
+    // access to libreadline's global state.
     ONCE.call_once(|| unsafe {
-      // We should be safe *not* using our all-protecting mutex here
-      // because this functionality is invoked only as the very first
-      // interaction with libreadline, by virtue of being used only in
-      // the constructor of objects of the one struct that has exclusive
-      // access to libreadline's global state.
-      let mut state = readline_state(uninitialized());
-
       // Disable a bunch of libreadline stuff that would mess up things
       // we don't want messed up, most prominently signal handler state
       // and terminal state.
@@ -328,15 +332,15 @@ impl Readline {
       rl_line_buffer = null::<c_char>() as *mut c_char;
       rl_executing_keyseq = null::<c_char>() as *mut c_char;
 
-      state.load();
-
-      STATE = Some(state);
+      load_state(STATE.as_mut_ptr());
     });
 
-    match unsafe { &STATE } {
-      Some(state) => state,
-      None => unreachable!(),
-    }
+    // `STATE` is guaranteed to be initialized after the above call to
+    // `load_state`, so it should be safe to create a reference to the
+    // data now.
+    // TODO: Until MaybeUninit::get_ref is stable we have to craft our
+    //       own version.
+    unsafe { &*STATE.as_ptr() }
   }
 
   /// Retrieve a reference to the `Mutex` protecting all accesses to
