@@ -1,7 +1,7 @@
 // basic.rs
 
 // *************************************************************************
-// * Copyright (C) 2018 Daniel Mueller (deso@posteo.net)                   *
+// * Copyright (C) 2018-2020 Daniel Mueller (deso@posteo.net)              *
 // *                                                                       *
 // * This program is free software: you can redistribute it and/or modify  *
 // * it under the terms of the GNU General Public License as published by  *
@@ -21,15 +21,19 @@
 //! object.
 //! The relevant logic resides inside the `process_input` function.
 
+use std::ffi::CStr;
 use std::io::Read;
-use std::io::Result;
+use std::io::Result as IoResult;
 use std::io::stdin;
 use std::io::stdout;
 use std::io::Write;
+use std::str::Utf8Error;
 
 use termion::clear;
 use termion::cursor;
 use termion::raw::IntoRawMode;
+
+use unicode_segmentation::UnicodeSegmentation;
 
 use rline::Readline;
 
@@ -37,11 +41,31 @@ use rline::Readline;
 const EOT: u8 = 0x04;
 
 
+/// Find the grapheme cluster index that maps to the given byte
+/// position reported by libreadline.
+///
+/// This function is used to position the terminal cursor correctly,
+/// taking into account Unicode grapheme clusters (each of which may be
+/// multiple bytes wide but only occupies a single cell on the terminal).
+fn grapheme_index(s: &CStr, pos: usize) -> Result<usize, Utf8Error> {
+  let s = s.to_str()?;
+  let extended = true;
+  let mut count = 0;
+  for (idx, grapheme) in s.grapheme_indices(extended) {
+    if pos < idx + grapheme.len() {
+      break
+    }
+    count += 1;
+  }
+  Ok(count)
+}
+
+
 /// Read and process data from the given `Read` object.
 ///
 /// The bool wrapped inside the result is an indication whether to quit
 /// the application or not.
-fn process_input<R, W>(mut r: R, mut w: W, rl: &mut Readline, line: &mut u16) -> Result<bool>
+fn process_input<R, W>(mut r: R, mut w: W, rl: &mut Readline, line: &mut u16) -> IoResult<bool>
 where
   R: Read,
   W: Write,
@@ -76,6 +100,10 @@ where
     // cursor.
     rl.peek(|text, cursor| {
       w.write_all(text.to_bytes())?;
+      // Map a libreadline reported cursor position to the proper
+      // grapheme cluster to be able to render the cursor at the
+      // correct location.
+      let cursor = grapheme_index(text, cursor).unwrap();
       // Normalize the cursor position as per `termion`'s rules.
       write!(w, "{}", cursor::Goto(cursor as u16 + 1, *line))
     })?
@@ -85,7 +113,7 @@ where
   Ok(false)
 }
 
-fn main() -> Result<()> {
+fn main() -> IoResult<()> {
   // Transition terminal into raw mode to disable line buffering and
   // allow for one-byte-at-a-time reading.
   let mut w = stdout().into_raw_mode()?;
