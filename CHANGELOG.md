@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.3.0
+-----
 - Bumped minimum required Rust version to `1.36.0`
 - Replaced deprecated `std::mem::uninitialized` with usage of
   `std::mem::MaybeUninit`
