@@ -1,7 +1,7 @@
 // lib.rs
 
 // *************************************************************************
-// * Copyright (C) 2018-2020 Daniel Mueller (deso@posteo.net)              *
+// * Copyright (C) 2018-2022 Daniel Mueller (deso@posteo.net)              *
 // *                                                                       *
 // * This program is free software: you can redistribute it and/or modify  *
 // * it under the terms of the GNU General Public License as published by  *
@@ -158,6 +158,7 @@ trait Locked {
 }
 
 impl<T> Locked for Mutex<T> {
+  #[allow(clippy::match_like_matches_macro)]
   fn is_locked(&self) -> bool {
     self.try_lock().err().map_or(false, |x| {
       match x {
