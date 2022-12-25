@@ -1,5 +1,5 @@
-[![pipeline](https://gitlab.com/d-e-s-o/rline/badges/master/pipeline.svg)](https://gitlab.com/d-e-s-o/rline/commits/master)
-[![coverage](https://gitlab.com/d-e-s-o/rline/badges/master/coverage.svg)](https://gitlab.com/d-e-s-o/rline/-/jobs/artifacts/master/file/kcov/kcov-merged/index.html?job=coverage:kcov)
+[![pipeline](https://gitlab.com/d-e-s-o/rline/badges/main/pipeline.svg)](https://gitlab.com/d-e-s-o/rline/commits/main)
+[![coverage](https://gitlab.com/d-e-s-o/rline/badges/main/coverage.svg)](https://gitlab.com/d-e-s-o/rline/-/jobs/artifacts/main/file/kcov/kcov-merged/index.html?job=coverage:kcov)
 [![crates.io](https://img.shields.io/crates/v/rline.svg)](https://crates.io/crates/rline)
 [![Docs](https://docs.rs/rline/badge.svg)](https://docs.rs/rline)
 [![rustc](https://img.shields.io/badge/rustc-1.36+-blue.svg)](https://blog.rust-lang.org/2019/07/04/Rust-1.36.0.html)
@@ -85,5 +85,5 @@ integration can be found there.
 
 [docs-rs]: https://docs.rs/crate/rline
 [libreadline]: https://tiswww.case.edu/php/chet/readline/readline.html#SEC41
-[rline-example]: https://github.com/d-e-s-o/rline/blob/master/examples/basic.rs
+[rline-example]: https://github.com/d-e-s-o/rline/blob/main/examples/basic.rs
 [notnow]: https://crates.io/crates/notnow
