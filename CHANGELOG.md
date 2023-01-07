@@ -1,6 +1,7 @@
 Unreleased
 ----------
 - Switched to using GitHub Actions as CI provider
+- Updated example to use `termion` `2.0`
 
 
 0.3.0
