@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.3.1
+-----
 - Re-run build script on changes to `CARGO_CFG_TARGET_OS` env var
 - Switched to using GitHub Actions as CI provider
 - Updated example to use `termion` `2.0`
