@@ -1,6 +1,7 @@
 Unreleased
 ----------
 - Introduced `static` feature for linking to `libreadline` statically
+- Added GitHub Actions workflow for publishing the crate
 
 
 0.3.1
