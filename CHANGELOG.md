@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Introduced `static` feature for linking to `libreadline` statically
+
+
 0.3.1
 -----
 - Re-run build script on changes to `CARGO_CFG_TARGET_OS` env var

@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Daniel Mueller <deso@posteo.net>
+# Copyright (C) 2022-2023 Daniel Mueller <deso@posteo.net>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 name: CI
@@ -33,8 +33,25 @@ jobs:
         override: true
     - name: Build
       run: |
-        cargo build --lib --tests --examples --all-features
-        cargo build --lib --tests --examples --all-features --release
+        cargo build --lib --tests --examples
+        cargo build --lib --tests --examples --release
+  build-static:
+    name: Build static
+    runs-on: ubuntu-latest
+    env:
+      READLINE_LIB_DIR: /usr/lib/x86_64-linux-gnu/
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - name: Build
+      run: |
+        sudo apt-get install libreadline-dev
+        cargo build --lib --tests --examples --features=static
+        cargo build --lib --tests --examples --features=static --release
   test:
     name: Test and coverage
     runs-on: ubuntu-latest

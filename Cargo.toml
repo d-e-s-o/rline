@@ -16,6 +16,10 @@ Input line retrieval using libreadline's "Alternate Interface".
 build = "build.rs"
 links = "readline"
 
+[features]
+# Link to libreadline statically.
+static = []
+
 [dependencies.libc]
 version = "0.2"
 
