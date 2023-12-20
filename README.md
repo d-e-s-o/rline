@@ -84,6 +84,6 @@ for the input of text in its terminal based UI. Another example
 integration can be found there.
 
 [docs-rs]: https://docs.rs/crate/rline
-[libreadline]: https://tiswww.case.edu/php/chet/readline/readline.html#SEC41
+[libreadline]: https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface
 [rline-example]: https://github.com/d-e-s-o/rline/blob/main/examples/basic.rs
 [notnow]: https://crates.io/crates/notnow
