@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2023 Daniel Mueller <deso@posteo.net>
+// Copyright (C) 2018-2024 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #![warn(
@@ -418,9 +418,9 @@ impl Readline {
   /// example, libreadline always starts in input mode, but, depending
   /// on user configuration, it can be transitioned to vi-movement-mode
   /// in which key bindings behave differently (other similar modes
-  /// exist). When reseting the line using this method the input mode is
-  /// unaffected. If you truly need to manually force libreadline into
-  /// input mode, a new `Readline` will help:
+  /// exist). When resetting the line using this method the input mode
+  /// is unaffected. If you truly need to manually force libreadline
+  /// into input mode, a new `Readline` will help:
   /// ```rust
   /// # use rline::Readline;
   /// # let mut current = Readline::new();
