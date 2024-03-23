@@ -378,36 +378,40 @@ impl Readline {
   /// buffer is said to hold 512 bytes, so any slice of equal or greater
   /// size may cause a panic.
   pub fn feed(&mut self, key: impl AsRef<Key>) -> Option<CString> {
-    if key.as_ref().is_empty() {
-      return None
+    fn feed_impl(rl: &Readline, key: &Key) -> Option<CString> {
+      if key.is_empty() {
+        return None
+      }
+
+      let _guard = rl.activate();
+
+      for &b in key {
+        // This call will only fail if there is not enough space available
+        // to push the given character (with libreadline specifying a
+        // buffer size large enough for 512 characters). As we feed one
+        // character at a time and process (i.e., consume) it immediately
+        // afterwards, there is no risk of us ever hitting this limit.
+        //
+        // Note that despite `rl_stuff_char` accepting a `c_int`, it
+        // actually casts that value down to a single byte internally,
+        // which is why we provide a saner interface that directly just
+        // accepts bytes.
+        let result = unsafe { rl_stuff_char(c_int::from(b)) };
+        // There is nothing we can do about this error. Heck, not even the
+        // user can do anything about this problem *after* hitting it. We
+        // cannot safely call `rl_callback_read_char` without risking
+        // cutting off input in the middle of an escape sequence,
+        // resulting in what effectively is corrupted input. We also
+        // cannot revert the buffer back to its previous state because
+        // there is no API to do that. Holy crap what a mess.
+        assert_ne!(result, 0, "libreadline's input buffer overflowed");
+      }
+
+      unsafe { rl_callback_read_char(); }
+      Readline::line().take()
     }
 
-    let _guard = self.activate();
-
-    for &b in key.as_ref() {
-      // This call will only fail if there is not enough space available
-      // to push the given character (with libreadline specifying a
-      // buffer size large enough for 512 characters). As we feed one
-      // character at a time and process (i.e., consume) it immediately
-      // afterwards, there is no risk of us ever hitting this limit.
-      //
-      // Note that despite `rl_stuff_char` accepting a `c_int`, it
-      // actually casts that value down to a single byte internally,
-      // which is why we provide a saner interface that directly just
-      // accepts bytes.
-      let result = unsafe { rl_stuff_char(c_int::from(b)) };
-      // There is nothing we can do about this error. Heck, not even the
-      // user can do anything about this problem *after* hitting it. We
-      // cannot safely call `rl_callback_read_char` without risking
-      // cutting off input in the middle of an escape sequence,
-      // resulting in what effectively is corrupted input. We also
-      // cannot revert the buffer back to its previous state because
-      // there is no API to do that. Holy crap what a mess.
-      assert_ne!(result, 0, "libreadline's input buffer overflowed");
-    }
-
-    unsafe { rl_callback_read_char(); }
-    Self::line().take()
+    feed_impl(self, key.as_ref())
   }
 
   /// Reset libreadline's line state to the given line with the given
@@ -435,14 +439,17 @@ impl Readline {
   where
     S: AsRef<CStr>,
   {
-    let s = line.as_ref();
-    assert!(cursor <= s.to_bytes().len(), "invalid cursor position");
+    fn reset_impl(rl: &Readline, s: &CStr, cursor: usize, clear_undo: bool) {
+      assert!(cursor <= s.to_bytes().len(), "invalid cursor position");
 
-    let _guard = self.activate();
-    unsafe {
-      rl_replace_line(s.as_ptr(), clear_undo.into());
-      rl_point = cursor as c_int;
+      let _guard = rl.activate();
+      unsafe {
+        rl_replace_line(s.as_ptr(), clear_undo.into());
+        rl_point = cursor as c_int;
+      }
     }
+
+    reset_impl(self, line.as_ref(), cursor, clear_undo)
   }
 
   /// Peek at the current line state through a closure.
