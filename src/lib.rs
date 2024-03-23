@@ -506,6 +506,15 @@ mod tests {
   use std::mem::align_of;
 
 
+  /// Exercise the `Debug` representation of various types.
+  #[test]
+  fn debug_repr() {
+    assert_ne!(format!("{:?}", T(())), "");
+
+    let rl = Readline::default();
+    assert_ne!(format!("{:?}", rl), "");
+  }
+
   #[test]
   fn is_locked() {
     let mutex = Mutex::<u64>::new(42);
