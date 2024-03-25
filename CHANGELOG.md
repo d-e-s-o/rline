@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Bumped minimum supported Rust version to `1.38`
+
+
 0.3.2
 -----
 - Introduced `static` feature for linking to `libreadline` statically
