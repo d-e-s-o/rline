@@ -41,6 +41,7 @@ use std::fmt::Formatter;
 use std::mem::replace;
 use std::mem::MaybeUninit;
 use std::ptr::null;
+use std::ptr::null_mut;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 use std::sync::Once;
@@ -48,7 +49,6 @@ use std::sync::TryLockError;
 
 use libc::c_char;
 use libc::c_int;
-use libc::c_void;
 use libc::calloc;
 use libc::free;
 
@@ -215,7 +215,7 @@ impl Readline {
     } else {
       unsafe {
         let _ = replace(Self::line(), Some(CStr::from_ptr(line).into()));
-        free(line as *mut c_void);
+        free(line.cast());
       }
     }
   }
@@ -246,9 +246,9 @@ impl Readline {
         // allocated by libreadline itself, as part of its
         // initialization. Because we create a new context we need to
         // reinitialize this data.
-        rl_line_buffer = calloc(1, 64) as *mut c_char;
+        rl_line_buffer = calloc(1, 64).cast();
         rl_line_buffer_len = 64;
-        rl_executing_keyseq = calloc(1, 16) as *mut c_char;
+        rl_executing_keyseq = calloc(1, 16).cast();
         rl_key_sequence_length = 16;
 
         // We use similar behavior to default Rust and panic on
@@ -293,10 +293,10 @@ impl Readline {
       // about them again.
       rl_catch_signals = 0;
       rl_catch_sigwinch = 0;
-      rl_input_available_hook = Self::input_available as *mut rl_hook_func_t;
-      rl_redisplay_function = Self::display as *mut rl_voidfunc_t;
-      rl_prep_term_function = Self::initialize_term as *mut rl_vintfunc_t;
-      rl_deprep_term_function = Self::uninitialize_term as *mut rl_voidfunc_t;
+      rl_input_available_hook = Self::input_available as *mut _;
+      rl_redisplay_function = Self::display as *mut _;
+      rl_prep_term_function = Self::initialize_term as *mut _;
+      rl_deprep_term_function = Self::uninitialize_term as *mut _;
 
       // Note that we do not ever invoke rl_callback_handler_remove.
       // This crate's assumption is that it is the sole user of
@@ -307,15 +307,15 @@ impl Readline {
       // capturing even all of its own global state, we could not even
       // remove the handler if we wanted to, because activating a
       // `readline_state` object would not set the handler. Sigh.
-      rl_callback_handler_install(null::<c_char>(), Self::handle_line as *mut rl_vcpfunc_t);
+      rl_callback_handler_install(null(), Self::handle_line as *mut _);
 
       // libreadline already has buffers allocated but we won't be using
       // them.
-      free(rl_line_buffer as *mut c_void);
-      free(rl_executing_keyseq as *mut c_void);
+      free(rl_line_buffer.cast());
+      free(rl_executing_keyseq.cast());
 
-      rl_line_buffer = null::<c_char>() as *mut c_char;
-      rl_executing_keyseq = null::<c_char>() as *mut c_char;
+      rl_line_buffer = null_mut();
+      rl_executing_keyseq = null_mut();
 
       load_state(STATE.as_mut_ptr());
     });
@@ -445,7 +445,7 @@ impl Readline {
       let _guard = rl.activate();
       unsafe {
         rl_replace_line(s.as_ptr(), clear_undo.into());
-        rl_point = cursor as c_int;
+        rl_point = cursor as _;
       }
     }
 
@@ -463,8 +463,8 @@ impl Readline {
       debug_assert!(rl_point >= 0);
 
       let buf = rl_line_buffer;
-      let len = rl_end as usize;
-      let pos = rl_point as usize;
+      let len = rl_end as _;
+      let pos = rl_point as _;
 
       (CStr::from_ptr(buf), pos, len)
     };
@@ -486,8 +486,8 @@ impl Drop for Readline {
 
     // Make sure to release the memory we allocated.
     unsafe {
-      free(rl_executing_keyseq as *mut c_void);
-      free(rl_line_buffer as *mut c_void);
+      free(rl_executing_keyseq.cast());
+      free(rl_line_buffer.cast());
     }
   }
 }
