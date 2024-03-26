@@ -49,6 +49,7 @@ use std::sync::TryLockError;
 
 use libc::c_char;
 use libc::c_int;
+use libc::c_void;
 use libc::calloc;
 use libc::free;
 
@@ -76,6 +77,7 @@ extern "C" {
   static mut rl_line_buffer_len: c_int;
   static mut rl_point: c_int;
   static mut rl_end: c_int;
+  static mut rl_undo_list: *mut c_void;
 
   static mut rl_executing_keyseq: *mut c_char;
   static mut rl_key_sequence_length: c_int;
@@ -98,6 +100,8 @@ extern "C" {
   // Note that the actual prototype accepts a mutable pointer to
   // `readline_state`. Const correctness is not easy...
   fn rl_restore_state(state: *const readline_state) -> c_int;
+
+  fn rl_free_undo_list();
 }
 
 
@@ -316,6 +320,7 @@ impl Readline {
 
       rl_line_buffer = null_mut();
       rl_executing_keyseq = null_mut();
+      rl_undo_list = null_mut();
 
       load_state(STATE.as_mut_ptr());
     });
@@ -484,8 +489,9 @@ impl Drop for Readline {
   fn drop(&mut self) {
     let _guard = self.activate();
 
-    // Make sure to release the memory we allocated.
+    // Make sure to release the memory we or libreadline allocated.
     unsafe {
+      rl_free_undo_list();
       free(rl_executing_keyseq.cast());
       free(rl_line_buffer.cast());
     }

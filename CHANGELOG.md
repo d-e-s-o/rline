@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Fixed potential memory leak caused by undo lists
 - Bumped minimum supported Rust version to `1.38`
 
 
