@@ -159,12 +159,12 @@ impl<T> Locked for Mutex<T> {
 
 
 /// A wrapper for `MutexGuard` ensuring that our libreadline state is read back before dropping.
-struct ReadlineGuard<'data, 'slf> {
+struct ReadlineGuard<'data> {
   _guard: MutexGuard<'data, Id>,
-  state: RefMut<'slf, readline_state>,
+  state: RefMut<'data, readline_state>,
 }
 
-impl<'data, 'slf> Drop for ReadlineGuard<'data, 'slf> {
+impl Drop for ReadlineGuard<'_> {
   fn drop(&mut self) {
     // Before unlocking (by virtue of dropping the embedded guard)
     // always make sure to read back the most recent version of the
@@ -356,7 +356,7 @@ impl Readline {
   }
 
   /// Activate this context.
-  fn activate<'slf, 'data: 'slf>(&'slf self) -> ReadlineGuard<'data, 'slf> {
+  fn activate(&self) -> ReadlineGuard<'_> {
     let mut guard = Self::mutex().lock().unwrap();
     let state = self.state.borrow_mut();
 
