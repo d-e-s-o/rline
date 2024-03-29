@@ -597,6 +597,21 @@ mod tests {
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
   }
 
+  /// Make sure that we can mix usage of different `Readline` instances.
+  #[test]
+  fn multi_instance() {
+    let mut rl1 = Readline::new();
+    assert_eq!(rl1.feed(b"abcdefg"), None);
+
+    let mut rl2 = Readline::new();
+    assert_eq!(rl2.feed(b"efghijl"), None);
+
+    rl1.reset(&CString::new("abc").unwrap(), 1, false);
+
+    assert_eq!(rl1.feed(b"\n").unwrap(), CString::new("abc").unwrap());
+    assert_eq!(rl2.feed(b"\n").unwrap(), CString::new("efghijl").unwrap());
+  }
+
   #[test]
   #[should_panic(expected = "invalid cursor position")]
   fn reset_panic() {
