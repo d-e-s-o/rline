@@ -161,7 +161,7 @@ impl<T> Locked for Mutex<T> {
 /// A wrapper for `MutexGuard` ensuring that our libreadline state is read back before dropping.
 struct ReadlineGuard<'data> {
   _guard: MutexGuard<'data, Id>,
-  state: RefMut<'data, readline_state>,
+  state: RefMut<'data, Box<readline_state>>,
 }
 
 impl Drop for ReadlineGuard<'_> {
@@ -184,7 +184,7 @@ type Key = [u8];
 #[derive(Debug)]
 pub struct Readline {
   id: Id,
-  state: RefCell<readline_state>,
+  state: RefCell<Box<readline_state>>,
 }
 
 impl Readline {
@@ -232,7 +232,7 @@ impl Readline {
   pub fn new() -> Self {
     let rl = Self {
       id: Id::new(),
-      state: RefCell::new(Self::initial().clone()),
+      state: RefCell::new(Box::new(Self::initial().clone())),
     };
 
     {
