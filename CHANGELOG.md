@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Added `Clone` impl for `Readline` type
 - Fixed potential memory leak caused by undo lists
 - Bumped minimum supported Rust version to `1.38`
 

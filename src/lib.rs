@@ -1,6 +1,7 @@
 // Copyright (C) 2018-2024 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#![allow(clippy::let_unit_value)]
 #![warn(
   future_incompatible,
   missing_copy_implementations,
@@ -40,6 +41,7 @@ use std::fmt::Error;
 use std::fmt::Formatter;
 use std::mem::replace;
 use std::mem::MaybeUninit;
+use std::ptr::copy_nonoverlapping;
 use std::ptr::null;
 use std::ptr::null_mut;
 use std::sync::Mutex;
@@ -52,6 +54,7 @@ use libc::c_int;
 use libc::c_void;
 use libc::calloc;
 use libc::free;
+use libc::malloc;
 
 use uid::Id as IdT;
 
@@ -224,41 +227,70 @@ impl Readline {
     }
   }
 
-  /// Create a new `Readline` instance.
-  ///
-  /// # Panics
-  ///
-  /// Panics on failure to allocate internally used C objects.
-  pub fn new() -> Self {
+  /// Create a new `Readline` instance using the provided state.
+  fn with_state(state: &readline_state) -> Self {
     let rl = Self {
       id: Id::new(),
-      state: RefCell::new(Box::new(Self::initial().clone())),
+      state: RefCell::new(Box::new(state.clone())),
     };
 
     {
       // Make sure that the new state is activated.
-      // TODO: Strictly speaking we could omit the load operation
-      //       happening when the guard leaves the scope. We know that
-      //       the state is current, so it just wastes cycles.
       let mut guard = rl.activate();
 
       unsafe {
-        debug_assert!(rl_line_buffer.is_null());
-        debug_assert!(rl_executing_keyseq.is_null());
-
+        let line_buffer_len = rl_line_buffer_len as _;
         // Unfortunately `readline_state` contains some data that is
         // allocated by libreadline itself, as part of its
         // initialization. Because we create a new context we need to
         // reinitialize this data.
-        rl_line_buffer = calloc(1, 64).cast();
-        rl_line_buffer_len = 64;
-        rl_executing_keyseq = calloc(1, 16).cast();
-        rl_key_sequence_length = 16;
+        if rl_line_buffer.is_null() {
+          rl_line_buffer = calloc(1, line_buffer_len).cast();
+          assert!(
+            !rl_line_buffer.is_null(),
+            "failed to allocate rl_line_buffer"
+          );
+        } else {
+          let rl_line_buffer_old = rl_line_buffer;
+          rl_line_buffer = malloc(line_buffer_len).cast();
+          assert!(
+            !rl_line_buffer.is_null(),
+            "failed to allocate rl_line_buffer"
+          );
 
-        // We use similar behavior to default Rust and panic on
-        // allocation failure.
-        assert!(!rl_line_buffer.is_null(), "failed to allocate rl_line_buffer");
-        assert!(!rl_executing_keyseq.is_null(), "failed to allocate rl_executing_keyseq");
+          let () = copy_nonoverlapping(rl_line_buffer_old, rl_line_buffer, line_buffer_len);
+        }
+
+        let key_sequence_length = rl_key_sequence_length as _;
+        if rl_executing_keyseq.is_null() {
+          rl_executing_keyseq = calloc(1, key_sequence_length).cast();
+          assert!(
+            !rl_executing_keyseq.is_null(),
+            "failed to allocate rl_executing_keyseq"
+          );
+        } else {
+          let rl_executing_keyseq_old = rl_executing_keyseq;
+          rl_executing_keyseq = malloc(key_sequence_length).cast();
+          assert!(
+            !rl_executing_keyseq.is_null(),
+            "failed to allocate rl_executing_keyseq"
+          );
+
+          let () = copy_nonoverlapping(
+            rl_executing_keyseq_old,
+            rl_executing_keyseq,
+            key_sequence_length,
+          );
+        }
+
+        // Always clear the undo list, because we do not know what state
+        // came before us and we most certainly do not want any
+        // references to it.
+        // TODO: This isn't exactly correct in case we are copying some
+        //       existing state, which may have undo items and we
+        //       ideally would want to preserve them in the new
+        //       instance, in the spirit of "cloning".
+        rl_undo_list = null_mut();
       }
 
       // We allocated some memory with the new addresses going directly
@@ -273,6 +305,15 @@ impl Readline {
     }
 
     rl
+  }
+
+  /// Create a new `Readline` instance.
+  ///
+  /// # Panics
+  ///
+  /// Panics on failure to allocate internally used C objects.
+  pub fn new() -> Self {
+    Self::with_state(Self::initial())
   }
 
   /// Retrieve the pristine initial `readline_state` as it was set by libreadline.
@@ -479,6 +520,12 @@ impl Readline {
   }
 }
 
+impl Clone for Readline {
+  fn clone(&self) -> Self {
+    Self::with_state(&self.state.borrow())
+  }
+}
+
 impl Default for Readline {
   fn default() -> Self {
     Self::new()
@@ -595,6 +642,23 @@ mod tests {
 
     assert_eq!(rl.feed(b"y"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123y").unwrap(), 4));
+  }
+
+  /// Check that cloning a `Readline` object works as it should.
+  #[test]
+  fn clone() {
+    let mut rl1 = Readline::new();
+    assert_eq!(rl1.feed(b"abcdefg"), None);
+
+    let mut rl2 = rl1.clone();
+    assert_eq!(rl2.feed(b"\n").unwrap(), CString::new("abcdefg").unwrap());
+    assert_eq!(rl1.feed(b"\n").unwrap(), CString::new("abcdefg").unwrap());
+
+    assert_eq!(rl1.feed(b"123"), None);
+    rl2.reset(&CString::new("hihi").unwrap(), 2, false);
+
+    assert_eq!(rl2.feed(b"ho\n").unwrap(), CString::new("hihohi").unwrap());
+    assert_eq!(rl1.feed(b"\n").unwrap(), CString::new("123").unwrap());
   }
 
   /// Make sure that we can mix usage of different `Readline` instances.
