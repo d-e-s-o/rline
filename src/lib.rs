@@ -250,10 +250,8 @@ impl Readline {
         // allocated by libreadline itself, as part of its
         // initialization. Because we create a new context we need to
         // reinitialize this data.
-        rl_line_buffer = calloc(1, 64).cast();
-        rl_line_buffer_len = 64;
-        rl_executing_keyseq = calloc(1, 16).cast();
-        rl_key_sequence_length = 16;
+        rl_line_buffer = calloc(1, rl_line_buffer_len as _).cast();
+        rl_executing_keyseq = calloc(1, rl_key_sequence_length as _).cast();
 
         // We use similar behavior to default Rust and panic on
         // allocation failure.
