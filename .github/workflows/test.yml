@@ -21,12 +21,22 @@ env:
 
 jobs:
   build:
-    name: Build [${{ matrix.rust }}]
+    name: Build [${{ matrix.rust }}, ${{ matrix.release }}]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        rust: [1.52.0, stable]
+        rust: [stable]
+        release: ["", "--release"]
+        args: ["--lib --tests --examples"]
+        include:
+          # MSRV testing is applicable only to the library itself.
+          - rust: 1.52.0
+            args: "--lib"
+            release: ""
+          - rust: 1.52.0
+            args: "--lib"
+            release: "--release"
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@master
@@ -34,8 +44,7 @@ jobs:
         toolchain: ${{ matrix.rust }}
     - name: Build
       run: |
-        cargo build --lib --tests --examples
-        cargo build --lib --tests --examples --release
+        cargo build ${{ matrix.release }} ${{ matrix.args }}
   build-static:
     name: Build static
     runs-on: ubuntu-latest
