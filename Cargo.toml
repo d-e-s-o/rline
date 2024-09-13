@@ -27,7 +27,7 @@ version = "0.2"
 version = "0.1"
 
 [dev-dependencies.termion]
-version = "2.0.1"
+version = "4.0.2"
 
 [dev-dependencies.unicode-segmentation]
 version = "1.6"
