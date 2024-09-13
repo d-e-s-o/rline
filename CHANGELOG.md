@@ -1,3 +1,8 @@
+Unreleased
+----------
+- Bumped minimum required Rust version to `1.52.0`
+
+
 0.3.3
 -----
 - Decreased `Readline` object size by heap allocating more state
