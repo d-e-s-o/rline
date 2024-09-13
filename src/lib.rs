@@ -10,6 +10,7 @@
   rust_2018_idioms,
   trivial_casts,
   trivial_numeric_casts,
+  unsafe_op_in_unsafe_fn,
   unstable_features,
   unused_import_braces,
   unused_qualifications,
@@ -214,11 +215,14 @@ impl Readline {
   extern "C" fn handle_line(line: *mut c_char) {
     debug_assert!(Self::mutex().is_locked());
 
+    // SAFETY: Our global mutex is locked (as per assertion above) and
+    //         we only call the function once.
+    let line_ref = unsafe { Self::line() };
     if line.is_null() {
-      let _ = replace(Self::line(), Some(CString::new("").unwrap()));
+      let _ = replace(line_ref, Some(CString::new("").unwrap()));
     } else {
       unsafe {
-        let _ = replace(Self::line(), Some(CStr::from_ptr(line).into()));
+        let _ = replace(line_ref, Some(CStr::from_ptr(line).into()));
         free(line.cast());
       }
     }
@@ -346,7 +350,12 @@ impl Readline {
   }
 
   /// A reference to the global line storage.
-  fn line() -> &'static mut Option<CString> {
+  ///
+  /// # Safety
+  /// Callers must ensure that the global mutex is held for the duration
+  /// of the usage of the returned reference and are not allowed to call
+  /// this function while another such reference is active.
+  unsafe fn line() -> &'static mut Option<CString> {
     static mut LINE: Option<CString> = None;
     debug_assert!(Self::mutex().is_locked());
 
@@ -411,7 +420,10 @@ impl Readline {
       }
 
       unsafe { rl_callback_read_char(); }
-      Readline::line().take()
+      // SAFETY: `_guard` will outlive the returned reference and we
+      //         only call the function once.
+      let line_ref = unsafe { Readline::line() };
+      line_ref.take()
     }
 
     feed_impl(self, key.as_ref())
