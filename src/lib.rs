@@ -41,6 +41,8 @@ use std::fmt::Error;
 use std::fmt::Formatter;
 use std::mem::replace;
 use std::mem::MaybeUninit;
+use std::ptr::addr_of;
+use std::ptr::addr_of_mut;
 use std::ptr::null;
 use std::ptr::null_mut;
 use std::sync::Mutex;
@@ -343,7 +345,10 @@ impl Readline {
 
     ONCE.call_once(|| unsafe { MUTEX = Some(Mutex::new(Id::new())) });
 
-    match unsafe { &MUTEX } {
+    // SAFETY: We never ever hand out mutable references to `MUTEX` or
+    //         use one beyond this point and so it's always safe to
+    //         create a shared one.
+    match unsafe { &*addr_of!(MUTEX) } {
       Some(mutex) => mutex,
       None => unreachable!(),
     }
@@ -359,7 +364,10 @@ impl Readline {
     static mut LINE: Option<CString> = None;
     debug_assert!(Self::mutex().is_locked());
 
-    unsafe { &mut LINE }
+    // SAFETY: As per the function contract, callers need to hold the
+    //         global mutex and may only keep around a single mutable
+    //         reference being returned.
+    unsafe { &mut *addr_of_mut!(LINE) }
   }
 
   /// Activate this context.
@@ -593,14 +601,14 @@ mod tests {
     assert_eq!(rl.feed(b"xyz"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("xyz").unwrap(), 3));
 
-    rl.reset(&CString::new("abc").unwrap(), 1, true);
+    rl.reset(CString::new("abc").unwrap(), 1, true);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("abc").unwrap(), 1));
 
     assert_eq!(rl.feed(b"x"), None);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("axbc").unwrap(), 2));
     assert_eq!(rl.feed(b"\n").unwrap(), CString::new("axbc").unwrap());
 
-    rl.reset(&CString::new("123").unwrap(), 3, true);
+    rl.reset(CString::new("123").unwrap(), 3, true);
     assert_eq!(rl.peek(|s, p| (s.to_owned(), p)), (CString::new("123").unwrap(), 3));
 
     assert_eq!(rl.feed(b"y"), None);
@@ -616,7 +624,7 @@ mod tests {
     let mut rl2 = Readline::new();
     assert_eq!(rl2.feed(b"efghijl"), None);
 
-    rl1.reset(&CString::new("abc").unwrap(), 1, false);
+    rl1.reset(CString::new("abc").unwrap(), 1, false);
 
     assert_eq!(rl1.feed(b"\n").unwrap(), CString::new("abc").unwrap());
     assert_eq!(rl2.feed(b"\n").unwrap(), CString::new("efghijl").unwrap());
@@ -625,6 +633,6 @@ mod tests {
   #[test]
   #[should_panic(expected = "invalid cursor position")]
   fn reset_panic() {
-    Readline::new().reset(&CString::new("abc").unwrap(), 4, true);
+    Readline::new().reset(CString::new("abc").unwrap(), 4, true);
   }
 }
