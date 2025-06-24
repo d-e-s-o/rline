@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Daniel Mueller <deso@posteo.net>
+# Copyright (C) 2022-2025 Daniel Mueller <deso@posteo.net>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 name: Test
@@ -55,7 +55,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - name: Build
       run: |
-        sudo apt-get install libreadline-dev
+        sudo apt-get install --yes --no-install-recommends libreadline-dev
         cargo build --lib --tests --examples --features=static
         cargo build --lib --tests --examples --features=static --release
   test:
@@ -86,7 +86,7 @@ jobs:
     - name: Enable debug symbols
       run: |
           # to get the symbolizer for debug symbol resolution
-          sudo apt-get install -y llvm-14
+          sudo apt-get install --yes --no-install-recommends llvm-14
           # to fix buggy leak analyzer:
           # https://github.com/japaric/rust-san#unrealiable-leaksanitizer
           sed -i '/\[features\]/i [profile.dev]' Cargo.toml
