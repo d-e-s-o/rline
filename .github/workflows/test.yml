@@ -44,6 +44,7 @@ jobs:
         toolchain: ${{ matrix.rust }}
     - name: Build
       run: |
+        sudo apt-get install --yes --no-install-recommends libreadline-dev
         cargo build ${{ matrix.release }} ${{ matrix.args }}
   build-static:
     name: Build static
@@ -66,7 +67,9 @@ jobs:
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: Test and gather coverage
-      run: cargo llvm-cov --all-targets --lcov --output-path lcov.info --ignore-filename-regex=/dev/null
+      run: |
+        sudo apt-get install --yes --no-install-recommends libreadline-dev
+        cargo llvm-cov --all-targets --lcov --output-path lcov.info --ignore-filename-regex=/dev/null
     - name: Upload code coverage results
       uses: codecov/codecov-action@v5
       env:
@@ -99,7 +102,9 @@ jobs:
         RUSTFLAGS: "-Zsanitizer=${{ matrix.sanitizer }}"
         ASAN_OPTIONS: "detect_odr_violation=0:detect_leaks=0"
         LSAN_OPTIONS: ""
-      run: cargo test --workspace --lib --tests --target x86_64-unknown-linux-gnu
+      run: |
+        sudo apt-get install --yes --no-install-recommends libreadline-dev
+        cargo test --workspace --lib --tests --target x86_64-unknown-linux-gnu
   clippy:
     name: Lint with clippy
     runs-on: ubuntu-latest
