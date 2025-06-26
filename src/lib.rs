@@ -39,7 +39,6 @@ use std::ffi::CString;
 use std::fmt::Debug;
 use std::fmt::Error;
 use std::fmt::Formatter;
-use std::mem::replace;
 use std::mem::MaybeUninit;
 use std::ptr::addr_of;
 use std::ptr::addr_of_mut;
@@ -221,10 +220,10 @@ impl Readline {
     //         we only call the function once.
     let line_ref = unsafe { Self::line() };
     if line.is_null() {
-      let _ = replace(line_ref, Some(CString::new("").unwrap()));
+      let _ = line_ref.replace(CString::new("").unwrap());
     } else {
       unsafe {
-        let _ = replace(line_ref, Some(CStr::from_ptr(line).into()));
+        let _ = line_ref.replace(CStr::from_ptr(line).into());
         free(line.cast());
       }
     }
@@ -280,6 +279,7 @@ impl Readline {
   }
 
   /// Retrieve the pristine initial `readline_state` as it was set by libreadline.
+  #[allow(static_mut_refs)]
   fn initial() -> &'static readline_state {
     // We effectively cache a version of `readline_state` as it was set
     // by libreadline before anything could have changed. This state
@@ -332,8 +332,6 @@ impl Readline {
     // `STATE` is guaranteed to be initialized after the above call to
     // `load_state`, so it should be safe to create a reference to the
     // data now.
-    // TODO: Until MaybeUninit::get_ref is stable we have to craft our
-    //       own version.
     unsafe { &*STATE.as_ptr() }
   }
 
