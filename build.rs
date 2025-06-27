@@ -1,4 +1,4 @@
-// Copyright (C) 2018-2023 Daniel Mueller <deso@posteo.net>
+// Copyright (C) 2018-2025 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use std::env::var;
@@ -19,8 +19,11 @@ fn main() {
       }
       // For the convenience of the user, we always include some
       // sensible (?) default search directories.
-      println!("cargo:rustc-link-search=native=/usr/lib/");
-      println!("cargo:rustc-link-search=native=/usr/lib64/");
+      match var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap().as_ref() {
+        "32" => println!("cargo:rustc-link-search=native=/usr/lib/"),
+        "64" => println!("cargo:rustc-link-search=native=/usr/lib64/"),
+        _ => (),
+      }
 
       println!(
         "cargo:rustc-link-lib={}readline",

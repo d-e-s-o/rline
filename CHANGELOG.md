@@ -1,5 +1,6 @@
 Unreleased
 ----------
+- Honor system bitness when configuring native library search path
 - Bumped minimum required Rust version to `1.52.0`
 
 
