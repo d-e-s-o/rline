@@ -40,6 +40,6 @@ fn main() {
         println!("cargo:rustc-link-lib=static=tinfo");
       }
     },
-    os => panic!("unsupported target OS {}", os),
+    os => panic!("unsupported target OS {os}"),
   }
 }

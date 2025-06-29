@@ -31,10 +31,12 @@ jobs:
         args: ["--lib --tests --examples"]
         include:
           # MSRV testing is applicable only to the library itself.
-          - rust: 1.52.0
+          # Please adjust README and `msrv` in .clippy.toml when bumping
+          # version.
+          - rust: 1.63.0
             args: "--lib"
             release: ""
-          - rust: 1.52.0
+          - rust: 1.63.0
             args: "--lib"
             release: "--release"
     steps:
