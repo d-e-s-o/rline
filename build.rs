@@ -1,6 +1,8 @@
 // Copyright (C) 2018-2025 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+//! Build script for rline.
+
 use std::env::var;
 use std::env::var_os;
 use std::path::Path;

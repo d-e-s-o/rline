@@ -1,22 +1,6 @@
 // Copyright (C) 2018-2025 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#![warn(
-  future_incompatible,
-  missing_copy_implementations,
-  missing_debug_implementations,
-  missing_docs,
-  rust_2018_compatibility,
-  rust_2018_idioms,
-  trivial_casts,
-  trivial_numeric_casts,
-  unsafe_op_in_unsafe_fn,
-  unstable_features,
-  unused_import_braces,
-  unused_qualifications,
-  unused_results,
-)]
-
 //! A crate for reading a line using libreadline. Contrary to many other
 //! crates, a character-based interface for inputting text is provided,
 //! which allows for externally managed reading of input. That is, by
@@ -220,10 +204,10 @@ impl Readline {
     //         we only call the function once.
     let line_ref = unsafe { Self::line() };
     if line.is_null() {
-      let _ = line_ref.replace(CString::new("").unwrap());
+      let _prev = line_ref.replace(CString::new("").unwrap());
     } else {
       unsafe {
-        let _ = line_ref.replace(CStr::from_ptr(line).into());
+        let _prev = line_ref.replace(CStr::from_ptr(line).into());
         free(line.cast());
       }
     }
@@ -536,7 +520,7 @@ mod tests {
     assert_ne!(format!("{:?}", T(())), "");
 
     let rl = Readline::default();
-    assert_ne!(format!("{:?}", rl), "");
+    assert_ne!(format!("{rl:?}"), "");
   }
 
   #[test]
