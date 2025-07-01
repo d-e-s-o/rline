@@ -13,7 +13,8 @@ fn main() {
 
   let link_static = var_os("READLINE_STATIC").is_some() || cfg!(feature = "static");
 
-  match var("CARGO_CFG_TARGET_OS").unwrap().as_ref() {
+  let os = var("CARGO_CFG_TARGET_OS").unwrap();
+  match os.as_ref() {
     "linux" => {
       if let Some(lib_dir) = var_os("READLINE_LIB_DIR") {
         let lib_dir = Path::new(&lib_dir);
@@ -26,6 +27,10 @@ fn main() {
         "64" => println!("cargo:rustc-link-search=native=/usr/lib64/"),
         _ => (),
       }
+
+      let arch = var("CARGO_CFG_TARGET_ARCH").unwrap();
+      let abi = var("CARGO_CFG_TARGET_ENV").unwrap();
+      println!("cargo:rustc-link-search=native=/usr/lib/{arch}-{os}-{abi}");
 
       println!(
         "cargo:rustc-link-lib={}readline",

@@ -51,8 +51,6 @@ jobs:
   build-static:
     name: Build static
     runs-on: ubuntu-latest
-    env:
-      READLINE_LIB_DIR: /usr/lib/x86_64-linux-gnu/
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
