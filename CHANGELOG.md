@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.3.4
+-----
 - Honor system bitness when configuring native library search path
 - Adjusted crate to use Rust Edition 2021
 - Bumped minimum required Rust version to `1.63.0`
