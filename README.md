@@ -2,7 +2,7 @@
 [![coverage](https://codecov.io/gh/d-e-s-o/rline/branch/main/graph/badge.svg)](https://codecov.io/gh/d-e-s-o/rline)
 [![crates.io](https://img.shields.io/crates/v/rline.svg)](https://crates.io/crates/rline)
 [![Docs](https://docs.rs/rline/badge.svg)](https://docs.rs/rline)
-[![rustc](https://img.shields.io/badge/rustc-1.63+-blue.svg)](https://blog.rust-lang.org/2022/08/11/Rust-1.63.0/)
+[![rustc](https://img.shields.io/badge/rustc-1.65+-blue.svg)](https://blog.rust-lang.org/2022/11/03/Rust-1.65.0/)
 
 rline
 =====
