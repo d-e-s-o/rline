@@ -40,7 +40,7 @@ jobs:
             args: "--lib"
             release: "--release"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
@@ -52,7 +52,7 @@ jobs:
     name: Build static
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: dtolnay/rust-toolchain@stable
     - name: Build
       run: |
@@ -63,7 +63,7 @@ jobs:
     name: Test and coverage
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: Test and gather coverage
@@ -84,7 +84,7 @@ jobs:
         sanitizer: [address, leak]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: dtolnay/rust-toolchain@nightly
     - name: Enable debug symbols
       run: |
@@ -109,7 +109,7 @@ jobs:
     name: Lint with clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo clippy --no-deps --all-targets --all-features -- -A unknown_lints -A deprecated -D warnings
   rustdoc:
@@ -118,6 +118,6 @@ jobs:
     env:
       RUSTDOCFLAGS: '-D warnings'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo doc --workspace --no-deps --document-private-items
